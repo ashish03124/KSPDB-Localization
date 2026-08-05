@@ -372,10 +372,9 @@ export default function App() {
         return;
       }
       console.log('SIMULATOR SPAN:', selectedSimSpan);
-      const idx = selectedSimSpan.indexOf('-P-');
-      console.log('INDEX OF -P-:', idx);
-      const uId = selectedSimSpan.substring(0, idx);
-      const vId = selectedSimSpan.substring(idx + 1); // child node is vId
+      const mid = Math.floor(selectedSimSpan.length / 2);
+      const uId = selectedSimSpan.substring(0, mid);
+      const vId = selectedSimSpan.substring(mid + 1); // child node is vId
       console.log('PARSED uId:', uId, 'vId:', vId);
       const poleDetails = poles.find(p => p.id === vId);
       console.log('POLE DETAILS:', poleDetails);
