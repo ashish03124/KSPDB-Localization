@@ -3,7 +3,7 @@ dotenv.config();
 
 import express from 'express';
 import http from 'http';
-import WebSocket from 'ws';
+import WebSocket, { WebSocketServer } from 'ws';
 import cors from 'cors';
 import path from 'path';
 import { getDb, initDb } from './db';
@@ -15,7 +15,7 @@ import { askCopilot } from './services/ai';
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ noServer: true });
+const wss = new WebSocketServer({ noServer: true });
 
 app.use(cors());
 app.use(express.json());
