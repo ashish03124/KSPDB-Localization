@@ -1,4 +1,4 @@
-import { getDb } from '../db';
+import { getDb, sessionStore } from '../db';
 
 export interface TopologyNode {
   id: string;
@@ -20,17 +20,21 @@ export interface DTTopology {
 }
 
 class TopologyService {
-  // Map of dt_id -> DTTopology
-  private topologies: Map<string, DTTopology> = new Map();
+  // Map of sessionId -> (dt_id -> DTTopology)
+  private sessionTopologies: Map<string, Map<string, DTTopology>> = new Map();
 
   /**
    * Builds topologies for all DTs. Runs at startup.
    */
   public async loadAllTopologies() {
-    console.log('Building network topologies (reconstructing missing 60%)...');
+    const sessionId = sessionStore.getStore() || 'default';
+    if (this.sessionTopologies.has(sessionId)) return;
+
+    console.log(`[Session: ${sessionId}] Building network topologies (reconstructing missing 60%)...`);
     const db = await getDb();
     
     const dts = await db.all('SELECT * FROM transformers');
+    const topologiesMap = new Map<string, DTTopology>();
     
     for (const dt of dts) {
       // Find all poles under this DT
@@ -53,18 +57,22 @@ class TopologyService {
         this.reconstructTopologyMST(dtTopology, poles);
       }
 
-      this.topologies.set(dt.id, dtTopology);
+      topologiesMap.set(dt.id, dtTopology);
     }
     
-    console.log(`Topology loading completed. Loaded ${this.topologies.size} transformers.`);
+    this.sessionTopologies.set(sessionId, topologiesMap);
+    console.log(`[Session: ${sessionId}] Topology loading completed. Loaded ${topologiesMap.size} transformers.`);
   }
 
   public getTopology(dtId: string): DTTopology | undefined {
-    return this.topologies.get(dtId);
+    const sessionId = sessionStore.getStore() || 'default';
+    const topologies = this.sessionTopologies.get(sessionId);
+    return topologies?.get(dtId);
   }
 
   public getAllTopologies(): Map<string, DTTopology> {
-    return this.topologies;
+    const sessionId = sessionStore.getStore() || 'default';
+    return this.sessionTopologies.get(sessionId) || new Map();
   }
 
   private buildVerifiedTopology(topology: DTTopology, poles: any[]) {

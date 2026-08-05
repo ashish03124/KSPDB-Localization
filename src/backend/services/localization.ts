@@ -1,4 +1,4 @@
-import { getDb } from '../db';
+import { getDb, sessionStore } from '../db';
 import { topologyService, DTTopology, TopologyNode } from './topology';
 import { telemetryEvents } from './telemetry';
 
@@ -15,31 +15,37 @@ export interface ActiveFault {
 }
 
 class LocalizationEngine {
-  private isRunning = false;
+  private isRunningMap: Map<string, boolean> = new Map();
+  private debounceTimers: Map<string, NodeJS.Timeout> = new Map();
 
   constructor() {
     // Run localization when telemetry events arrive or sensor watchdog triggers
-    telemetryEvents.on('telemetry', () => this.triggerAnalysis());
-    telemetryEvents.on('sensor_offline', () => this.triggerAnalysis());
+    telemetryEvents.on('telemetry', ({ sessionId }) => this.triggerAnalysis(sessionId));
+    telemetryEvents.on('sensor_offline', ({ sessionId }) => this.triggerAnalysis(sessionId));
   }
 
-  private debounceTimer: NodeJS.Timeout | null = null;
-
-  public triggerAnalysis() {
-    if (this.debounceTimer) {
-      clearTimeout(this.debounceTimer);
+  public triggerAnalysis(sessionId: string = 'default') {
+    const existingTimer = this.debounceTimers.get(sessionId);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
     }
-    // Debounce to avoid slamming the database during high-speed telemetry bursts
-    this.debounceTimer = setTimeout(() => {
-      this.runAnalysis().catch(err => {
-        console.error('Error running fault localization analysis:', err);
+    
+    // Debounce per session
+    const timer = setTimeout(() => {
+      sessionStore.run(sessionId, () => {
+        this.runAnalysis().catch(err => {
+          console.error(`[Session: ${sessionId}] Error running fault localization:`, err);
+        });
       });
     }, 1000);
+
+    this.debounceTimers.set(sessionId, timer);
   }
 
   public async runAnalysis() {
-    if (this.isRunning) return;
-    this.isRunning = true;
+    const sessionId = sessionStore.getStore() || 'default';
+    if (this.isRunningMap.get(sessionId)) return;
+    this.isRunningMap.set(sessionId, true);
 
     try {
       const db = await getDb();
@@ -126,7 +132,7 @@ class LocalizationEngine {
       await this.reconcileTickets(detectedFaults);
 
     } finally {
-      this.isRunning = false;
+      this.isRunningMap.delete(sessionId);
     }
   }
 

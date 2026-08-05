@@ -6,7 +6,7 @@ import http from 'http';
 import WebSocket, { WebSocketServer } from 'ws';
 import cors from 'cors';
 import path from 'path';
-import { getDb, initDb } from './db';
+import { getDb, initDb, sessionStore } from './db';
 import { seed } from './seed';
 import { telemetryService, telemetryEvents, TelemetryPayload } from './services/telemetry';
 import { topologyService } from './services/topology';
@@ -20,34 +20,63 @@ const wss = new WebSocketServer({ noServer: true });
 app.use(cors());
 app.use(express.json());
 
+// Track all active session IDs in a Set
+const activeSessions = new Set<string>();
+
+// Middleware to extract session ID and execute request in sessionStore context
+app.use((req, res, next) => {
+  const sessionId = (req.headers['x-session-id'] as string) || 'default';
+  activeSessions.add(sessionId);
+  
+  sessionStore.run(sessionId, async () => {
+    try {
+      const db = await initDb();
+      const feederCount = await db.get<{ count: number }>("SELECT COUNT(*) as count FROM feeders");
+      if (!feederCount || feederCount.count === 0) {
+        console.log(`[Auto-Seed] Initializing seed data into database for session: ${sessionId}...`);
+        await seed();
+      }
+      await topologyService.loadAllTopologies();
+    } catch (err) {
+      console.error(`[Session: ${sessionId}] Failed to auto-initialize:`, err);
+    }
+    next();
+  });
+});
+
 // --- WebSocket Broadcast Helper ---
-function broadcast(type: string, data: any) {
+function broadcast(sessionId: string, type: string, data: any) {
   const message = JSON.stringify({ type, data });
   wss.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
+    if (client.readyState === WebSocket.OPEN && (client as any).sessionId === sessionId) {
       client.send(message);
     }
   });
 }
 
 // Listen to telemetry and ticket changes to broadcast to UI
-telemetryEvents.on('telemetry', (payload) => {
-  broadcast('telemetry', payload);
+telemetryEvents.on('telemetry', ({ payload, sessionId }) => {
+  broadcast(sessionId, 'telemetry', payload);
 });
 
-// Watch SQLite database for ticket updates via localization updates
-let lastTicketsJson = '';
+// Watch SQLite database for ticket updates via localization updates per session
+const lastTicketsJsonMap = new Map<string, string>();
 setInterval(async () => {
-  try {
-    const db = await getDb();
-    const tickets = await db.all("SELECT * FROM tickets ORDER BY datetime(created_at) DESC");
-    const ticketsJson = JSON.stringify(tickets);
-    if (ticketsJson !== lastTicketsJson) {
-      lastTicketsJson = ticketsJson;
-      broadcast('tickets', tickets);
-    }
-  } catch (err) {
-    // Suppress polling logging
+  for (const sessionId of activeSessions) {
+    await sessionStore.run(sessionId, async () => {
+      try {
+        const db = await getDb();
+        const tickets = await db.all("SELECT * FROM tickets ORDER BY datetime(created_at) DESC");
+        const ticketsJson = JSON.stringify(tickets);
+        const lastTicketsJson = lastTicketsJsonMap.get(sessionId) || '';
+        if (ticketsJson !== lastTicketsJson) {
+          lastTicketsJsonMap.set(sessionId, ticketsJson);
+          broadcast(sessionId, 'tickets', tickets);
+        }
+      } catch (err) {
+        // Suppress polling logging
+      }
+    });
   }
 }, 1000);
 
@@ -307,10 +336,15 @@ app.get('*', (req, res, next) => {
 
 // --- HTTP and WebSocket Server Upgrade Binding ---
 server.on('upgrade', (request, socket, head) => {
-  const pathname = request.url ? new URL(request.url, `http://${request.headers.host}`).pathname : '';
+  const host = request.headers.host || 'localhost';
+  const urlObj = request.url ? new URL(request.url, `http://${host}`) : null;
+  const pathname = urlObj ? urlObj.pathname : '';
+  const sessionId = urlObj ? urlObj.searchParams.get('sessionId') || 'default' : 'default';
   
   if (pathname === '/ws') {
     wss.handleUpgrade(request, socket, head, (ws) => {
+      (ws as any).sessionId = sessionId;
+      activeSessions.add(sessionId);
       wss.emit('connection', ws, request);
     });
   } else {
@@ -319,15 +353,21 @@ server.on('upgrade', (request, socket, head) => {
 });
 
 wss.on('connection', (ws) => {
-  console.log('[WS] Client connected to live events');
+  const sessionId = (ws as any).sessionId || 'default';
+  console.log(`[WS] Client connected to live events (Session: ${sessionId})`);
   
-  // Send current state of tickets immediately upon connection
-  getDb().then(db => db.all("SELECT * FROM tickets ORDER BY datetime(created_at) DESC"))
-    .then(tickets => ws.send(JSON.stringify({ type: 'tickets', data: tickets })))
-    .catch(() => {});
+  sessionStore.run(sessionId, async () => {
+    try {
+      const db = await getDb();
+      const tickets = await db.all("SELECT * FROM tickets ORDER BY datetime(created_at) DESC");
+      ws.send(JSON.stringify({ type: 'tickets', data: tickets }));
+    } catch (err) {
+      console.error(`[Session: ${sessionId}] Failed to send initial tickets:`, err);
+    }
+  });
 
   ws.on('close', () => {
-    console.log('[WS] Client disconnected');
+    console.log(`[WS] Client disconnected (Session: ${sessionId})`);
   });
 });
 
@@ -339,16 +379,18 @@ server.listen(PORT, '0.0.0.0', async () => {
   console.log(`   API & Websockets: http://0.0.0.0:${PORT}       `);
   console.log(`==================================================`);
   
-  // Setup and load topology cache
+  // Setup default session
   try {
-    const db = await initDb();
-    const feederCount = await db.get<{ count: number }>("SELECT COUNT(*) as count FROM feeders");
-    if (!feederCount || feederCount.count === 0) {
-      console.log('[Auto-Seed] Initializing seed data into database...');
-      await seed();
-    }
-    await topologyService.loadAllTopologies();
-    await localizationEngine.runAnalysis();
+    await sessionStore.run('default', async () => {
+      const db = await initDb();
+      const feederCount = await db.get<{ count: number }>("SELECT COUNT(*) as count FROM feeders");
+      if (!feederCount || feederCount.count === 0) {
+        console.log('[Auto-Seed] Initializing seed data into database for default session...');
+        await seed();
+      }
+      await topologyService.loadAllTopologies();
+      await localizationEngine.runAnalysis();
+    });
   } catch (err) {
     console.error('Initialization failed during server startup:', err);
   }

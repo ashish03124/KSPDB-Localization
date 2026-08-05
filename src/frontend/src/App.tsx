@@ -71,6 +71,32 @@ interface Ticket {
   updated_at: string;
 }
 
+// Generate a persistent unique session ID for the user
+const getSessionId = () => {
+  let id = localStorage.getItem('kspdb_session_id');
+  if (!id) {
+    id = 'sess_' + Math.random().toString(36).substring(2, 15);
+    localStorage.setItem('kspdb_session_id', id);
+  }
+  return id;
+};
+const sessionId = getSessionId();
+
+// Intercept all fetch requests to inject x-session-id header automatically
+const originalFetch = window.fetch;
+window.fetch = function (input, init) {
+  init = init || {};
+  init.headers = init.headers || {};
+  if (init.headers instanceof Headers) {
+    init.headers.set('x-session-id', sessionId);
+  } else if (Array.isArray(init.headers)) {
+    init.headers.push(['x-session-id', sessionId]);
+  } else {
+    (init.headers as any)['x-session-id'] = sessionId;
+  }
+  return originalFetch(input, init);
+};
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<'console' | 'simulator'>('console');
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
@@ -136,7 +162,7 @@ export default function App() {
     
     // Connect Live WebSocket Stream
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    const wsUrl = `${protocol}//${window.location.host}/ws?sessionId=${sessionId}`;
     
     let ws = new WebSocket(wsUrl);
     

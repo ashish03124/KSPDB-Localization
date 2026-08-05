@@ -1,25 +1,41 @@
 import sqlite3 from 'sqlite3';
 import { open, Database } from 'sqlite';
 import path from 'path';
+import fs from 'fs';
+import { AsyncLocalStorage } from 'async_hooks';
 
-let dbInstance: Database | null = null;
+// AsyncLocalStorage to propagate sessionId through the request context
+export const sessionStore = new AsyncLocalStorage<string>();
+
+const sessionsDir = path.join(__dirname, '../../sessions');
+if (!fs.existsSync(sessionsDir)) {
+  fs.mkdirSync(sessionsDir, { recursive: true });
+}
+
+const dbInstances: { [sessionId: string]: Database } = {};
 
 export async function getDb(): Promise<Database> {
-  if (dbInstance) {
-    return dbInstance;
+  const sessionId = sessionStore.getStore() || 'default';
+  const safeSessionId = sessionId.replace(/[^a-zA-Z0-9_-]/g, '') || 'default';
+
+  if (dbInstances[safeSessionId]) {
+    return dbInstances[safeSessionId];
   }
 
-  const dbPath = process.env.DB_PATH || path.join(__dirname, '../../kspdb.db');
+  const dbPath = safeSessionId === 'default'
+    ? (process.env.DB_PATH || path.join(__dirname, '../../kspdb.db'))
+    : path.join(sessionsDir, `kspdb_${safeSessionId}.db`);
   
-  dbInstance = await open({
+  const db = await open({
     filename: dbPath,
     driver: sqlite3.Database
   });
 
   // Enable foreign keys
-  await dbInstance.run('PRAGMA foreign_keys = ON;');
+  await db.run('PRAGMA foreign_keys = ON;');
 
-  return dbInstance;
+  dbInstances[safeSessionId] = db;
+  return db;
 }
 
 export async function initDb(): Promise<Database> {
@@ -72,11 +88,11 @@ export async function initDb(): Promise<Database> {
 
     CREATE TABLE IF NOT EXISTS tickets (
       id TEXT PRIMARY KEY,
-      fault_type TEXT NOT NULL, -- 'span', 'dt', 'feeder'
-      target_id TEXT NOT NULL,  -- e.g., 'P-024431-P-024432', 'D-0112', 'F-07-03'
-      coordinates TEXT NOT NULL, -- 'lat,lon'
+      fault_type TEXT NOT NULL,
+      target_id TEXT NOT NULL,
+      coordinates TEXT NOT NULL,
       pincode TEXT,
-      status TEXT NOT NULL, -- 'detected', 'acknowledged', 'crew_assigned', 'resolved', 'verified', 'closed'
+      status TEXT NOT NULL,
       confidence REAL NOT NULL,
       confidence_reason TEXT NOT NULL,
       affected_poles_count INTEGER NOT NULL,
@@ -86,7 +102,7 @@ export async function initDb(): Promise<Database> {
 
     CREATE TABLE IF NOT EXISTS scheduled_outages (
       id TEXT PRIMARY KEY,
-      scope TEXT NOT NULL, -- 'feeder', 'dt'
+      scope TEXT NOT NULL,
       target_id TEXT NOT NULL,
       start TEXT NOT NULL,
       end TEXT NOT NULL,
