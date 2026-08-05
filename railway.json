@@ -6,6 +6,7 @@
   },
   "deploy": {
     "startCommand": "node dist/backend/index.js",
+    "healthcheckPath": "/",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   }
