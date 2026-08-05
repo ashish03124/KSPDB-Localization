@@ -1,6 +1,6 @@
 import { getDb } from '../db';
 import { topologyService } from './topology';
-import https from 'https';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 /**
  * AI Operator Co-Pilot Service
@@ -45,8 +45,11 @@ ${activeOutages.map(so => `- ID: ${so.id}, Scope: ${so.scope}, Target: ${so.targ
     return generateMockResponse(message, openTickets, activeOutages, context);
   }
 
-  // 3. Make official Gemini API request using standard HTTPS fetch to avoid dependencies
-  return new Promise((resolve) => {
+  // 3. Make official Gemini API request using Google Generative AI SDK
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    
     const prompt = `You are the AI Operator Co-Pilot for the Karnataka State Power Distribution Board (KSPDB) control room.
 Your job is to assist operators at 2 a.m. who are managing power line outages. Explain things in plain, professional English.
 
@@ -57,52 +60,18 @@ User question: "${message}"
 
 Respond concisely in 2-3 paragraphs. If suggesting actions, list them clearly.`;
 
-    const payload = JSON.stringify({
-      contents: [{
-        parts: [{ text: prompt }]
-      }]
-    });
-
-    const options = {
-      hostname: 'generativelanguage.googleapis.com',
-      port: 443,
-      path: `/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(payload)
-      }
-    };
-
-    const req = https.request(options, (res) => {
-      let data = '';
-      res.on('data', (chunk) => data += chunk);
-      res.on('end', () => {
-        try {
-          const parsed = JSON.parse(data);
-          const responseText = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (responseText) {
-            resolve(responseText.trim());
-          } else if (parsed.error) {
-            console.error('[Gemini API Error Detail]:', JSON.stringify(parsed.error, null, 2));
-            resolve(`Error: Gemini API returned an error: "${parsed.error.message || 'Unknown API Error'}". Here is the mock analysis instead:\n\n` + generateMockResponse(message, openTickets, activeOutages, context));
-          } else {
-            console.error('[Gemini API Invalid Response]:', JSON.stringify(parsed, null, 2));
-            resolve("Error: Gemini returned an empty or invalid response. Here is the mock analysis instead:\n\n" + generateMockResponse(message, openTickets, activeOutages, context));
-          }
-        } catch (e) {
-          resolve("Error parsing Gemini API response. Here is the mock analysis instead:\n\n" + generateMockResponse(message, openTickets, activeOutages, context));
-        }
-      });
-    });
-
-    req.on('error', (e) => {
-      resolve("Could not connect to Gemini API. Here is the mock analysis instead:\n\n" + generateMockResponse(message, openTickets, activeOutages, context));
-    });
-
-    req.write(payload);
-    req.end();
-  });
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
+    if (responseText) {
+      return responseText.trim();
+    } else {
+      console.error('[Gemini SDK Error]: Empty response text');
+      return "Error: Gemini returned an empty response. Here is the mock analysis instead:\n\n" + generateMockResponse(message, openTickets, activeOutages, context);
+    }
+  } catch (err: any) {
+    console.error('[Gemini SDK Error Detail]:', err);
+    return `Error: Gemini SDK returned an error: "${err.message || err}". Here is the mock analysis instead:\n\n` + generateMockResponse(message, openTickets, activeOutages, context);
+  }
 }
 
 function generateMockResponse(
