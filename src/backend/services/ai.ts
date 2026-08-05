@@ -48,7 +48,10 @@ ${activeOutages.map(so => `- ID: ${so.id}, Scope: ${so.scope}, Target: ${so.targ
   // 3. Make official Gemini API request using Google Generative AI SDK
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel(
+      { model: 'gemini-1.5-flash' },
+      { apiVersion: 'v1' }
+    );
     
     const prompt = `You are the AI Operator Co-Pilot for the Karnataka State Power Distribution Board (KSPDB) control room.
 Your job is to assist operators at 2 a.m. who are managing power line outages. Explain things in plain, professional English.
