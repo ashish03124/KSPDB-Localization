@@ -83,7 +83,11 @@ Respond concisely in 2-3 paragraphs. If suggesting actions, list them clearly.`;
           const responseText = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
           if (responseText) {
             resolve(responseText.trim());
+          } else if (parsed.error) {
+            console.error('[Gemini API Error Detail]:', JSON.stringify(parsed.error, null, 2));
+            resolve(`Error: Gemini API returned an error: "${parsed.error.message || 'Unknown API Error'}". Here is the mock analysis instead:\n\n` + generateMockResponse(message, openTickets, activeOutages, context));
           } else {
+            console.error('[Gemini API Invalid Response]:', JSON.stringify(parsed, null, 2));
             resolve("Error: Gemini returned an empty or invalid response. Here is the mock analysis instead:\n\n" + generateMockResponse(message, openTickets, activeOutages, context));
           }
         } catch (e) {
