@@ -26,7 +26,7 @@ The system will:
 
 ## Submission Resources
 
-* **GitHub Repository:** `[Insert Public GitHub Repository URL]`
+* **GitHub Repository:** https://github.com/ashish03124/KSPDB-Localization.git
 * **Live Deployed System:** `[Insert Public Deployment URL]`
 * **5-Minute Demo Video:** `[Insert Loom/Drive/YouTube Link]`
   * *Watch a walk-through demonstrating: fault injection, automatic boundary localization, operator dispatch, and automated telemetry-driven closure.*
