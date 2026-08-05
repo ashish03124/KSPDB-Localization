@@ -371,21 +371,29 @@ export default function App() {
         setIsSimulating(false);
         return;
       }
+      console.log('SIMULATOR SPAN:', selectedSimSpan);
       const idx = selectedSimSpan.indexOf('-P-');
+      console.log('INDEX OF -P-:', idx);
       const uId = selectedSimSpan.substring(0, idx);
       const vId = selectedSimSpan.substring(idx + 1); // child node is vId
+      console.log('PARSED uId:', uId, 'vId:', vId);
       const poleDetails = poles.find(p => p.id === vId);
+      console.log('POLE DETAILS:', poleDetails);
       if (poleDetails) {
         const topo = topologies[poleDetails.dt_id];
+        console.log('TOPO FOR DT:', poleDetails.dt_id, topo);
         if (topo) {
           const collectDownstream = (nodeId: string, acc: string[]) => {
             acc.push(nodeId);
             const node = topo.nodes[nodeId];
+            console.log('DOWNSTREAM NODE:', nodeId, node);
             node?.children.forEach((c: string) => collectDownstream(c, acc));
           };
           const downstreamIds: string[] = [];
           collectDownstream(vId, downstreamIds);
+          console.log('DOWNSTREAM IDS:', downstreamIds);
           affectedPoles = poles.filter(p => downstreamIds.includes(p.id));
+          console.log('AFFECTED POLES:', affectedPoles);
         }
       }
     } else if (simType === 'noise') {
