@@ -173,8 +173,8 @@ app.post('/api/tickets/:id/resolve', async (req, res) => {
       const devices = await db.all('SELECT * FROM devices WHERE pole_id IN (SELECT id FROM poles WHERE dt_id = ?)', [ticket.target_id]);
       darkPolesCount = devices.filter(d => d.energized === 0 || (now - new Date(d.last_seen).getTime() > 16.5 * 60 * 1000)).length;
     } else if (ticket.fault_type === 'span') {
-      // Span format: P-0101-002-P-0101-003. Child/downstream pole is P-0101-003.
-      const childPoleId = ticket.target_id.split('-').slice(2).join('-'); // e.g., 'P-0101-003'
+      const lastDashP = ticket.target_id.indexOf('-P-');
+      const childPoleId = lastDashP !== -1 ? ticket.target_id.substring(lastDashP + 1) : '';
       
       // Look up DT topology for this pole
       const poleDetails = await db.get('SELECT dt_id FROM poles WHERE id = ?', [childPoleId]);

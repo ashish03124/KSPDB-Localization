@@ -371,7 +371,9 @@ export default function App() {
         setIsSimulating(false);
         return;
       }
-      const [uId, vId] = selectedSimSpan.split('-'); // child node is vId
+      const idx = selectedSimSpan.indexOf('-P-');
+      const uId = selectedSimSpan.substring(0, idx);
+      const vId = selectedSimSpan.substring(idx + 1); // child node is vId
       const poleDetails = poles.find(p => p.id === vId);
       if (poleDetails) {
         const topo = topologies[poleDetails.dt_id];
