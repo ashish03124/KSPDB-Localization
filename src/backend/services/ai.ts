@@ -64,7 +64,7 @@ Respond concisely in 2-3 paragraphs. If suggesting actions, list them clearly.`;
     });
 
     const options = {
-      hostname: 'generativetoolkit.googleapis.com',
+      hostname: 'generativelanguage.googleapis.com',
       port: 443,
       path: `/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       method: 'POST',
