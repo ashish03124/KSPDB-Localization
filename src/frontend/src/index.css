@@ -221,9 +221,9 @@ body {
   display: grid;
   grid-template-columns: 350px 1fr 380px;
   gap: 20px;
-  height: calc(100vh - 70px);
+  min-height: calc(100vh - 70px);
   padding: 0 20px 20px 20px;
-  overflow: hidden;
+  overflow: auto;
 }
 
 @media (max-width: 1200px) {

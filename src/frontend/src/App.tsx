@@ -698,7 +698,7 @@ export default function App() {
   const selectedTicket = tickets.find(t => t.id === selectedTicketId);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: 'var(--bg-main)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--bg-main)' }}>
       {/* HEADER */}
       <header className="console-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
