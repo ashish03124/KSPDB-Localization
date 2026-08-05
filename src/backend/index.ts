@@ -332,8 +332,8 @@ wss.on('connection', (ws) => {
 });
 
 // --- Server Startup ---
-const PORT = process.env.PORT || 3001;
-server.listen(Number(PORT), '0.0.0.0', async () => {
+const PORT = 3001;
+server.listen(PORT, '0.0.0.0', async () => {
   console.log(`==================================================`);
   console.log(`   KSPDB Power Localization Server Running       `);
   console.log(`   API & Websockets: http://0.0.0.0:${PORT}       `);
