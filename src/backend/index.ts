@@ -353,3 +353,11 @@ server.listen(Number(PORT), '0.0.0.0', async () => {
     console.error('Initialization failed during server startup:', err);
   }
 });
+
+process.on('uncaughtException', (err) => {
+  console.error('[UNCAUGHT EXCEPTION]:', err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[UNHANDLED REJECTION]:', reason);
+});
