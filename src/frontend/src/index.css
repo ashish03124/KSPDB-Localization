@@ -1,84 +1,87 @@
 :root {
-  /* === Industrial Dark Theme === */
-  /* Backgrounds */
-  --bg-main: #0E1117;
-  --bg-card: #161B22;
-  --bg-card-hover: #1C2330;
-  --border-color: #262C36;
+  /* === Dark Theme — Olive & Black === */
+  --bg-main: #0B0D08;
+  --bg-card: #12150C;
+  --bg-card-hover: #242B18;
+  --bg-elevated: #1A1E12;
+  --border-color: #2E3620;
 
-  /* Single accent: Emerald */
-  --accent-color: #22C55E;
-  --accent-hover: #16A34A;
-  --accent-dim: rgba(34, 197, 94, 0.08);
-  --accent-text: #ffffff;
+  /* Olive accents */
+  --accent-color: #8A9A5B;       /* Primary olive — buttons, active */
+  --accent-hover: #55632F;       /* Deep olive — pressed/headers */
+  --accent-bright: #B7C57E;      /* Bright olive — live nodes, highlights */
+  --accent-dim: rgba(138, 154, 91, 0.12);
+  --accent-text: #0B0D08;
 
   /* Semantic status */
-  --status-live: #22C55E;
-  --status-dark: #F85149;
-  --status-warn: #F2CC60;
-  --status-inactive: #8B949E;
-  --status-ack: #3B82F6;
+  --status-live: #B7C57E;        /* Bright olive — energized */
+  --status-dark: #C05B47;        /* Desaturated rust — danger */
+  --status-warn: #D4A843;        /* Amber warning */
+  --status-inactive: #79815F;    /* Text low as inactive */
+  --status-ack: #7A9BB5;         /* Muted blue for info */
 
-  /* Typography hierarchy */
-  --text-primary: #E5E7EB;
-  --text-secondary: #9CA3AF;
-  --text-muted: #6B7280;
-  --text-main: #E5E7EB;
+  /* Typography */
+  --text-primary: #E7EADC;       /* Bone, olive-tinted */
+  --text-secondary: #A8B092;     /* Text mid */
+  --text-muted: #79815F;         /* Text low */
+  --text-main: #E7EADC;
 
   /* Grid schematic tokens */
-  --grid-node: #F6C453;
-  --grid-line: #5F6B7A;
-  --grid-active: #32D583;
-  --grid-inferred: #56B6C2;
-  --grid-inactive: #475569;
+  --grid-node: #B7C57E;          /* Bright olive nodes */
+  --grid-line: #2E3620;          /* Hairline — passive lines */
+  --grid-active: #8A9A5B;        /* Primary olive — active lines */
+  --grid-inferred: #55632F;      /* Deep olive — inferred spans */
+  --grid-inactive: #1A1E12;      /* Card color — inactive */
 
   /* Button tokens */
-  --btn-success: #16A34A;
-  --btn-success-hover: #15803D;
-  --btn-danger: #DC2626;
-  --btn-danger-hover: #B91C1C;
+  --btn-success: #8A9A5B;
+  --btn-success-hover: #55632F;
+  --btn-danger: #C05B47;
+  --btn-danger-hover: #9E3F2E;
 
   /* Utility */
-  --header-bg: rgba(14, 17, 23, 0.92);
-  --terminal-bg: #0B0E14;
+  --header-bg: rgba(11, 13, 8, 0.92);
+  --terminal-bg: #0B0D08;
 }
 
-/* === Light Theme overrides === */
+/* === Light Theme — Olive & White === */
 body.light-theme {
-  --bg-main: #faf9f6;
-  --bg-card: #ffffff;
-  --bg-card-hover: #f1ede4;
-  --border-color: #e3dec3;
+  --bg-main: #F7F7F0;            /* Paper white */
+  --bg-card: #FDFDF8;            /* Card surface */
+  --bg-card-hover: #E4E8D3;      /* Tinted fill / selected */
+  --bg-elevated: #FDFDF8;
+  --border-color: #DBDFC9;
 
-  --accent-color: #556b2f;
-  --accent-hover: #3d4e22;
-  --accent-dim: rgba(85, 107, 47, 0.12);
-  --accent-text: #ffffff;
+  --accent-color: #5A6B2F;       /* Primary olive */
+  --accent-hover: #3E4A1D;       /* Deep olive — hover/filled */
+  --accent-bright: #77835A;      /* Node olive */
+  --accent-dim: rgba(90, 107, 47, 0.12);
+  --accent-text: #FDFDF8;
 
-  --status-live: #16A34A;
-  --status-dark: #DC2626;
-  --status-warn: #D97706;
-  --status-inactive: #9CA3AF;
-  --status-ack: #2563EB;
+  --status-live: #5A6B2F;
+  --status-dark: #A8452F;        /* Muted brick */
+  --status-warn: #A07830;
+  --status-inactive: #6A7355;
+  --status-ack: #3A6080;
 
-  --text-primary: #1F2937;
-  --text-secondary: #4B5563;
-  --text-muted: #6B7280;
-  --text-main: #1F2937;
+  --text-primary: #1B1F11;
+  --text-secondary: #6A7355;     /* Muted text */
+  --text-muted: #6A7355;
+  --text-main: #1B1F11;
 
-  --grid-node: #B45309;
-  --grid-line: #9CA3AF;
-  --grid-active: #16A34A;
-  --grid-inferred: #0891B2;
-  --grid-inactive: #D1D5DB;
+  --grid-node: #77835A;
+  --grid-line: #DBDFC9;
+  --grid-active: #5A6B2F;
+  --grid-inferred: #3E4A1D;
+  --grid-inactive: #E4E8D3;
 
-  --btn-success: #16A34A;
-  --btn-success-hover: #15803D;
-  --btn-danger: #DC2626;
-  --btn-danger-hover: #B91C1C;
+  --btn-success: #5A6B2F;
+  --btn-success-hover: #3E4A1D;
+  --btn-danger: #A8452F;
+  --btn-danger-hover: #8A3321;
 
-  --header-bg: rgba(250, 249, 246, 0.92);
-  --terminal-bg: #f4f3ed;
+  --header-bg: rgba(247, 247, 240, 0.92);
+  --terminal-bg: #E4E8D3;
 }
 
 /* === Base Styles === */

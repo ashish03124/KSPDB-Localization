@@ -856,10 +856,10 @@ export default function App() {
 
             {/* Map Legend Footer overlay */}
             <div style={{ position: 'absolute', bottom: 12, left: 12, zIndex: 10, display: 'flex', gap: 12, fontSize: '0.7rem', color: 'var(--text-secondary)', background: 'var(--bg-card)', padding: '8px 14px', borderRadius: 8, border: '1px solid var(--border-color)' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: '#22C55E' }}></span> Live</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444' }}></span> Dark</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EAB308' }}></span> Silent</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: '#6B7280' }}></span> Unmetered</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--status-live)' }}></span> Live</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--status-dark)' }}></span> Dark</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--status-warn)' }}></span> Silent</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--status-inactive)' }}></span> Unmetered</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>|</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 12, height: 2, borderBottom: '2px dashed var(--grid-inferred)' }}></span> Inferred</span>
             </div>
