@@ -14,7 +14,9 @@ import {
   Zap, 
   HelpCircle,
   Play,
-  Check
+  Check,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 interface Feeder {
@@ -71,6 +73,11 @@ interface Ticket {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'console' | 'simulator'>('console');
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
+  useEffect(() => {
+    document.body.className = theme === 'light' ? 'light-theme' : 'dark-theme';
+  }, [theme]);
   
   // Core State
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -571,7 +578,7 @@ export default function App() {
               y1={dtCoord.y}
               x2={nodeCoord.x}
               y2={nodeCoord.y}
-              stroke={isFaulty ? '#ef4444' : '#10b981'}
+              stroke={isFaulty ? 'var(--status-dark)' : 'var(--status-live)'}
               strokeWidth={isFaulty ? 3 : 1.5}
               strokeDasharray={topo.is_verified ? undefined : '4 4'}
               className={isFaulty ? 'pulse-red' : undefined}
@@ -589,17 +596,17 @@ export default function App() {
           const isFaulty = activeSpans.some(s => s === `${node.id}-${child.id}`);
 
           // Determine line color from telemetry liveness
-          let strokeColor = '#10b981'; // default energized
+          let strokeColor = 'var(--status-live)'; // default energized
           let strokeWidth = 1.5;
 
           if (isFaulty) {
-            strokeColor = '#ef4444'; // Faulty span
+            strokeColor = 'var(--status-dark)'; // Faulty span
             strokeWidth = 3.5;
           } else {
             // Check if downstream pole is dark
             const childDev = devices.find(d => d.pole_id === child.id);
             if (childDev && childDev.energized === 0) {
-              strokeColor = '#94a3b8'; // De-energized but not the break point itself
+              strokeColor = 'var(--text-muted)'; // De-energized but not the break point itself
             }
           }
 
@@ -629,14 +636,14 @@ export default function App() {
         <g key={dt.id} transform={`translate(${coord.x}, ${coord.y})`}>
           <polygon
             points="-8,8 8,8 0,-10"
-            fill={isFaulty ? '#ef4444' : '#6366f1'}
-            stroke="#0b0f19"
+            fill={isFaulty ? 'var(--status-dark)' : 'var(--accent-color)'}
+            stroke="var(--bg-main)"
             strokeWidth="1.5"
             className={isFaulty ? 'pulse-red' : undefined}
             style={{ cursor: 'pointer' }}
             onClick={() => setSimulationLogs(prev => [...prev, `Selected DT: ${dt.id}`])}
           />
-          <text y="-14" textAnchor="middle" fill="#94a3b8" fontSize="8" fontWeight="600">{dt.id}</text>
+          <text y="-14" textAnchor="middle" fill="var(--text-muted)" fontSize="8" fontWeight="600">{dt.id}</text>
         </g>
       );
     });
@@ -646,18 +653,18 @@ export default function App() {
       const coord = mapCoordsToSvg(p.lat, p.lon);
       const dev = devices.find(d => d.pole_id === p.id);
       
-      let color = '#94a3b8'; // Grey if unmetered
+      let color = 'var(--text-muted)'; // Grey if unmetered
       
       if (p.device_id !== null) {
-        if (dev) {
+         if (dev) {
           const now = Date.now();
           const lastSeenTime = new Date(dev.last_seen).getTime();
           const isOnline = now - lastSeenTime <= 16.5 * 60 * 1000;
           
           if (!isOnline) {
-            color = '#f59e0b'; // Timed out watchdog - Warning orange
+            color = 'var(--status-warn)'; // Timed out watchdog - Warning orange
           } else {
-            color = dev.energized === 1 ? '#10b981' : '#ef4444'; // Green if live, Red if dark
+            color = dev.energized === 1 ? 'var(--status-live)' : 'var(--status-dark)'; // Green if live, Red if dark
           }
         }
       }
@@ -669,7 +676,7 @@ export default function App() {
           cy={coord.y}
           r={p.device_id ? 4 : 2.5}
           fill={color}
-          stroke="#0b0f19"
+          stroke="var(--bg-main)"
           strokeWidth="1"
           style={{ cursor: 'pointer' }}
           onClick={() => {
@@ -695,7 +702,7 @@ export default function App() {
       {/* HEADER */}
       <header className="console-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Zap size={28} color="#6366f1" strokeWidth={3} />
+          <Zap size={28} color="var(--accent-color)" strokeWidth={3} />
           <div>
             <h1 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.025em' }}>
               KSPDB OUTAGE LOCATOR
@@ -724,8 +731,15 @@ export default function App() {
             <Wrench size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />
             Outage Simulator
           </button>
-          <button className="btn-secondary" onClick={fetchNetwork}>
+          <button className="btn-secondary" onClick={fetchNetwork} title="Refresh Network">
             <RefreshCw size={16} />
+          </button>
+          <button 
+            className="btn-secondary" 
+            onClick={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
+            title="Toggle Theme"
+          >
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
         </div>
       </header>
@@ -745,7 +759,7 @@ export default function App() {
           <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
             {tickets.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '40px 10px', color: 'var(--text-muted)' }}>
-                <CheckCircle size={32} color="#10b981" style={{ marginBottom: 10 }} />
+                <CheckCircle size={32} color="var(--status-live)" style={{ marginBottom: 10 }} />
                 <p style={{ margin: 0, fontSize: '0.875rem' }}>All lines fully energized.</p>
                 <p style={{ margin: 0, fontSize: '0.75rem' }}>No faults detected.</p>
               </div>
@@ -759,7 +773,7 @@ export default function App() {
                     padding: 12,
                     cursor: 'pointer',
                     borderColor: selectedTicketId === t.id ? 'var(--accent-color)' : 'var(--border-color)',
-                    background: selectedTicketId === t.id ? 'rgba(99, 102, 241, 0.1)' : 'var(--bg-card)'
+                    background: selectedTicketId === t.id ? 'var(--accent-dim)' : 'var(--bg-card)'
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
@@ -816,7 +830,7 @@ export default function App() {
             </div>
 
             <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 10, pointerEvents: 'none' }}>
-              <span className="badge badge-detected" style={{ background: 'rgba(11,15,25,0.9)' }}>
+              <span className="badge badge-detected" style={{ background: 'var(--bg-card)' }}>
                 <MapIcon size={14} /> Grid Schematic (Interactive Canvas)
               </span>
             </div>
@@ -841,13 +855,13 @@ export default function App() {
             )}
 
             {/* Map Legend Footer overlay */}
-            <div style={{ position: 'absolute', bottom: 12, left: 12, zIndex: 10, display: 'flex', gap: 12, fontSize: '0.75rem', background: 'rgba(11,15,25,0.9)', padding: '6px 12px', borderRadius: 8, border: '1px solid var(--border-color)' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: '#10b981' }}></span> Live Device</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: '#ef4444' }}></span> Dark Device</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: '#f59e0b' }}></span> Silent/Watchdog</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: '#94a3b8' }}></span> Unmetered</span>
+            <div style={{ position: 'absolute', bottom: 12, left: 12, zIndex: 10, display: 'flex', gap: 12, fontSize: '0.75rem', background: 'var(--bg-card)', padding: '6px 12px', borderRadius: 8, border: '1px solid var(--border-color)' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--status-live)' }}></span> Live Device</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--status-dark)' }}></span> Dark Device</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--status-warn)' }}></span> Silent/Watchdog</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--text-muted)' }}></span> Unmetered</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>|</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 12, height: 2, borderBottom: '2px dashed #10b981' }}></span> Inferred Span</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 12, height: 2, borderBottom: '2px dashed var(--status-live)' }}></span> Inferred Span</span>
             </div>
           </div>
 
@@ -857,7 +871,7 @@ export default function App() {
               <div style={{ display: 'flex', gap: 20, height: '100%' }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-                    <ShieldAlert size={20} color="#ef4444" />
+                    <ShieldAlert size={20} color="var(--status-dark)" />
                     <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Ticket Details: {selectedTicket.id}</h3>
                   </div>
                   
@@ -868,7 +882,7 @@ export default function App() {
                     <div><strong>Downstream Impact:</strong> {selectedTicket.affected_poles_count} poles affected</div>
                   </div>
                   
-                  <div style={{ marginTop: 10, padding: 8, background: 'rgba(255,255,255,0.03)', borderRadius: 6, fontSize: '0.7rem', border: '1px dashed var(--border-color)' }}>
+                  <div style={{ marginTop: 10, padding: 8, background: 'var(--bg-main)', borderRadius: 6, fontSize: '0.7rem', border: '1px dashed var(--border-color)' }}>
                     <strong>Confidence Report:</strong> {selectedTicket.confidence_reason}
                   </div>
                 </div>
@@ -889,7 +903,7 @@ export default function App() {
                   )}
 
                   {selectedTicket.status === 'crew_assigned' && (
-                    <button className="btn-primary" onClick={() => handleResolve(selectedTicket.id)} style={{ backgroundColor: '#10b981' }}>
+                    <button className="btn-primary" onClick={() => handleResolve(selectedTicket.id)} style={{ backgroundColor: 'var(--status-live)' }}>
                       Verify & Resolve Ticket
                     </button>
                   )}
@@ -903,7 +917,7 @@ export default function App() {
 
                   {selectedTicket.status === 'closed' && (
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500, textAlign: 'center' }}>
-                      <CheckCircle size={16} color="#10b981" style={{ marginRight: 6, display: 'inline-block', verticalAlign: 'middle' }} />
+                      <CheckCircle size={16} color="var(--status-live)" style={{ marginRight: 6, display: 'inline-block', verticalAlign: 'middle' }} />
                       Verified & Closed by Telemetry
                     </div>
                   )}
@@ -932,18 +946,19 @@ export default function App() {
               {/* AI Co-Pilot Panel */}
               <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 12 }}>
                 <h2 style={{ fontSize: '0.9rem', fontWeight: 600, margin: '0 0 10px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <MessageSquare size={16} color="#6366f1" />
+                  <MessageSquare size={16} color="var(--accent-color)" />
                   AI Operator Co-Pilot
                 </h2>
                 
                 {/* Chat Message Window */}
-                <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, padding: 6, marginBottom: 10, background: 'rgba(0,0,0,0.2)', borderRadius: 8 }}>
+                <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, padding: 6, marginBottom: 10, background: 'var(--bg-main)', borderRadius: 8 }}>
                   {chatHistory.map((msg, idx) => (
                     <div 
                       key={idx} 
                       style={{
                         alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-                        backgroundColor: msg.sender === 'user' ? 'var(--accent-color)' : 'rgba(255,255,255,0.06)',
+                        backgroundColor: msg.sender === 'user' ? 'var(--accent-color)' : 'var(--bg-card-hover)',
+                        color: msg.sender === 'user' ? 'var(--accent-text)' : 'var(--text-main)',
                         padding: '8px 12px',
                         borderRadius: 12,
                         maxWidth: '85%',
@@ -969,11 +984,11 @@ export default function App() {
                     placeholder="Ask about active outages..."
                     style={{
                       flex: 1,
-                      backgroundColor: 'rgba(255,255,255,0.05)',
+                      backgroundColor: 'var(--bg-card-hover)',
                       border: '1px solid var(--border-color)',
                       borderRadius: 6,
                       padding: '8px 12px',
-                      color: '#fff',
+                      color: 'var(--text-main)',
                       fontSize: '0.75rem'
                     }}
                   />
@@ -986,10 +1001,10 @@ export default function App() {
               {/* Live Telemetry Packet Stream */}
               <div className="glass-panel" style={{ height: 180, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 12 }}>
                 <h2 style={{ fontSize: '0.9rem', fontWeight: 600, margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Terminal size={16} color="#10b981" />
+                  <Terminal size={16} color="var(--status-live)" />
                   Live Telemetry Packet Monitor
                 </h2>
-                <div style={{ flex: 1, overflowY: 'auto', background: '#05070c', borderRadius: 6, padding: 8, fontFamily: 'monospace', fontSize: '0.65rem', color: '#10b981' }}>
+                <div style={{ flex: 1, overflowY: 'auto', background: 'var(--terminal-bg)', borderRadius: 6, padding: 8, fontFamily: 'monospace', fontSize: '0.65rem', color: 'var(--status-live)' }}>
                   {telemetryLogs.length === 0 ? (
                     <span style={{ color: 'var(--text-muted)' }}>Waiting for telemetry streams...</span>
                   ) : (
@@ -1011,7 +1026,7 @@ export default function App() {
             <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto', padding: 12, gap: 16 }}>
               <div>
                 <h2 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Wrench size={18} color="#6366f1" />
+                  <Wrench size={18} color="var(--accent-color)" />
                   Grid Outage Simulator
                 </h2>
                 <p style={{ margin: 0, fontSize: '0.7rem', color: 'var(--text-muted)' }}>
@@ -1026,28 +1041,28 @@ export default function App() {
                   <button 
                     className="btn-secondary" 
                     onClick={() => setSimType('span')}
-                    style={simType === 'span' ? { borderColor: 'var(--accent-color)', color: '#fff' } : {}}
+                    style={simType === 'span' ? { borderColor: 'var(--accent-color)', color: 'var(--accent-color)' } : {}}
                   >
                     Span Break
                   </button>
                   <button 
                     className="btn-secondary" 
                     onClick={() => setSimType('dt')}
-                    style={simType === 'dt' ? { borderColor: 'var(--accent-color)', color: '#fff' } : {}}
+                    style={simType === 'dt' ? { borderColor: 'var(--accent-color)', color: 'var(--accent-color)' } : {}}
                   >
                     DT Fuse
                   </button>
                   <button 
                     className="btn-secondary" 
                     onClick={() => setSimType('feeder')}
-                    style={simType === 'feeder' ? { borderColor: 'var(--accent-color)', color: '#fff' } : {}}
+                    style={simType === 'feeder' ? { borderColor: 'var(--accent-color)', color: 'var(--accent-color)' } : {}}
                   >
                     Feeder
                   </button>
                   <button 
                     className="btn-secondary" 
                     onClick={() => setSimType('noise')}
-                    style={simType === 'noise' ? { borderColor: 'var(--accent-color)', color: '#fff' } : {}}
+                    style={simType === 'noise' ? { borderColor: 'var(--accent-color)', color: 'var(--accent-color)' } : {}}
                   >
                     Sensor Noise
                   </button>
@@ -1060,7 +1075,7 @@ export default function App() {
                     <select 
                       value={selectedSimFeeder} 
                       onChange={(e) => setSelectedSimFeeder(e.target.value)}
-                      style={{ padding: 6, fontSize: '0.75rem', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', color: '#fff' }}
+                      style={{ padding: 6, fontSize: '0.75rem', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
                     >
                       {feeders.map(f => <option key={f.id} value={f.id}>{f.id} - {f.name}</option>)}
                     </select>
@@ -1073,7 +1088,7 @@ export default function App() {
                     <select 
                       value={selectedSimDt} 
                       onChange={(e) => setSelectedSimDt(e.target.value)}
-                      style={{ padding: 6, fontSize: '0.75rem', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', color: '#fff' }}
+                      style={{ padding: 6, fontSize: '0.75rem', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
                     >
                       {transformers.map(dt => <option key={dt.id} value={dt.id}>{dt.id} (Feeder {dt.feeder_id})</option>)}
                     </select>
@@ -1090,7 +1105,7 @@ export default function App() {
                           setSelectedSimDt(e.target.value);
                           setSelectedSimSpan('');
                         }}
-                        style={{ width: '100%', padding: 6, fontSize: '0.75rem', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', color: '#fff' }}
+                        style={{ width: '100%', padding: 6, fontSize: '0.75rem', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
                       >
                         {transformers.map(dt => <option key={dt.id} value={dt.id}>{dt.id}</option>)}
                       </select>
@@ -1100,7 +1115,7 @@ export default function App() {
                       <select 
                         value={selectedSimSpan} 
                         onChange={(e) => setSelectedSimSpan(e.target.value)}
-                        style={{ width: '100%', padding: 6, fontSize: '0.75rem', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', color: '#fff' }}
+                        style={{ width: '100%', padding: 6, fontSize: '0.75rem', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
                       >
                         <option value="">-- Choose Span --</option>
                         {activeDtSpans.map(s => <option key={s} value={s}>{s}</option>)}
@@ -1116,7 +1131,7 @@ export default function App() {
                       type="number" 
                       value={noiseMinutes} 
                       onChange={(e) => setNoiseMinutes(parseInt(e.target.value))}
-                      style={{ padding: 6, fontSize: '0.75rem', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', color: '#fff' }}
+                      style={{ padding: 6, fontSize: '0.75rem', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
                     />
                     <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Values &gt; 16 mins trigger the watchdog silent telemetry alert.</span>
                   </div>
@@ -1128,7 +1143,7 @@ export default function App() {
                     className="btn-primary" 
                     onClick={() => runOutageSimulation(false)}
                     disabled={isSimulating}
-                    style={{ flex: 1, backgroundColor: 'var(--status-dark)' }}
+                    style={{ flex: 1, backgroundColor: 'var(--status-dark)', color: '#fff' }}
                   >
                     Inject Fault
                   </button>
@@ -1136,7 +1151,7 @@ export default function App() {
                     className="btn-primary" 
                     onClick={() => runOutageSimulation(true)}
                     disabled={isSimulating}
-                    style={{ flex: 1, backgroundColor: 'var(--status-live)' }}
+                    style={{ flex: 1, backgroundColor: 'var(--status-live)', color: 'var(--accent-text)' }}
                   >
                     Trigger Repair
                   </button>
@@ -1152,7 +1167,7 @@ export default function App() {
                     <select 
                       value={maintenanceScope} 
                       onChange={(e) => setMaintenanceScope(e.target.value as any)}
-                      style={{ padding: 4, fontSize: '0.75rem', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', color: '#fff' }}
+                      style={{ padding: 4, fontSize: '0.75rem', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
                     >
                       <option value="dt">Transformer</option>
                       <option value="feeder">Feeder</option>
@@ -1164,7 +1179,7 @@ export default function App() {
                       value={maintenanceTarget} 
                       onChange={(e) => setMaintenanceTarget(e.target.value)}
                       placeholder={maintenanceScope === 'feeder' ? 'e.g., F-01-01' : 'e.g., D-0101'}
-                      style={{ padding: 4, fontSize: '0.75rem', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', color: '#fff' }}
+                      style={{ padding: 4, fontSize: '0.75rem', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
                     />
 
                     <label style={{ fontSize: '0.7rem' }}>Reason:</label>
@@ -1172,7 +1187,7 @@ export default function App() {
                       type="text" 
                       value={maintenanceReason} 
                       onChange={(e) => setMaintenanceReason(e.target.value)}
-                      style={{ padding: 4, fontSize: '0.75rem', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', color: '#fff' }}
+                      style={{ padding: 4, fontSize: '0.75rem', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
                     />
                   </div>
                   <button type="submit" className="btn-secondary" style={{ marginTop: 6, fontSize: '0.75rem', padding: '6px 12px' }}>
@@ -1184,13 +1199,13 @@ export default function App() {
               {/* Simulation Logs & Console Output */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 <label style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: 4 }}>Simulator Console Output:</label>
-                <div style={{ flex: 1, minHeight: 100, overflowY: 'auto', background: '#05070c', padding: 8, borderRadius: 6, fontFamily: 'monospace', fontSize: '0.65rem', color: '#38bdf8' }}>
+                <div style={{ flex: 1, minHeight: 100, overflowY: 'auto', background: 'var(--terminal-bg)', padding: 8, borderRadius: 6, fontFamily: 'monospace', fontSize: '0.65rem', color: 'var(--accent-color)' }}>
                   {simulationLogs.map((l, idx) => <div key={idx} style={{ marginBottom: 2 }}>{l}</div>)}
                 </div>
               </div>
 
               {/* Database reset */}
-              <button className="btn-secondary" onClick={handleResetDb} style={{ borderColor: 'rgba(239, 68, 68, 0.4)', color: '#fca5a5' }}>
+              <button className="btn-secondary" onClick={handleResetDb} style={{ borderColor: 'rgba(239, 68, 68, 0.4)', color: 'var(--status-dark)' }}>
                 Reset Database state
               </button>
             </div>
