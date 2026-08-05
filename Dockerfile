@@ -29,5 +29,5 @@ EXPOSE 3001
 ENV PORT=3001
 ENV NODE_ENV=production
 
-# Seed database and start application
-CMD node dist/backend/seed.js && node dist/backend/index.js
+# Start application (database will auto-seed on first run)
+CMD ["node", "dist/backend/index.js"]

@@ -341,7 +341,12 @@ server.listen(Number(PORT), '0.0.0.0', async () => {
   
   // Setup and load topology cache
   try {
-    await initDb();
+    const db = await initDb();
+    const feederCount = await db.get<{ count: number }>("SELECT COUNT(*) as count FROM feeders");
+    if (!feederCount || feederCount.count === 0) {
+      console.log('[Auto-Seed] Initializing seed data into database...');
+      await seed();
+    }
     await topologyService.loadAllTopologies();
     await localizationEngine.runAnalysis();
   } catch (err) {
