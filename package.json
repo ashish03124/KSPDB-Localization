@@ -4,12 +4,12 @@
   "description": "Karnataka State Power Distribution Board Fault Ingestion and Localization System",
   "main": "dist/backend/index.js",
   "scripts": {
-    "init-db": "ts-node src/backend/seed.ts",
+    "init-db": "ts-node -P tsconfig.backend.json src/backend/seed.ts",
     "build:frontend": "vite build",
     "build:backend": "tsc -p tsconfig.backend.json",
     "build": "npm run build:frontend && npm run build:backend",
     "start": "node dist/backend/index.js",
-    "dev:backend": "ts-node src/backend/index.ts",
+    "dev:backend": "ts-node -P tsconfig.backend.json src/backend/index.ts",
     "dev:frontend": "vite",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "test": "jest"
