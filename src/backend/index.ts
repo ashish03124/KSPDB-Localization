@@ -333,10 +333,10 @@ wss.on('connection', (ws) => {
 
 // --- Server Startup ---
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, async () => {
+server.listen(Number(PORT), '0.0.0.0', async () => {
   console.log(`==================================================`);
   console.log(`   KSPDB Power Localization Server Running       `);
-  console.log(`   API & Websockets: http://localhost:${PORT}      `);
+  console.log(`   API & Websockets: http://0.0.0.0:${PORT}       `);
   console.log(`==================================================`);
   
   // Setup and load topology cache
